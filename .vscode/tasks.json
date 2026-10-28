@@ -1,0 +1,33 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "watch",
+      "type": "process",
+      "command": "node",
+      "args": ["tools/build.mjs", "--watch"],
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "esbuild",
+        "pattern": { "regexp": "^(.*):(\\d+):(\\d+): (error|warning): (.*)$", "file": 1, "line": 2, "column": 3, "severity": 4, "message": 5 },
+        "background": { "activeOnStart": true, "beginsPattern": "^\\[watch\\] build started$", "endsPattern": "^\\[watch\\] build finished$" }
+      },
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "silent" }
+    },
+    {
+      "label": "desktop-host",
+      "type": "process",
+      "command": "node",
+      "args": ["tools/test-desktop.mjs", "--interactive"],
+      "dependsOn": "watch",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "desktop-host",
+        "pattern": { "regexp": "^(.*):(\\d+):(\\d+): (error|warning): (.*)$", "file": 1, "line": 2, "column": 3, "severity": 4, "message": 5 },
+        "background": { "activeOnStart": true, "beginsPattern": "^(Downloading|Resolving)", "endsPattern": "^Isolated desktop host ready" }
+      },
+      "presentation": { "reveal": "silent" }
+    }
+  ]
+}

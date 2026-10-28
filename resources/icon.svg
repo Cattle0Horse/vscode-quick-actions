@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Quick Actions</title>
+  <defs>
+    <linearGradient id="tile" x1="20" y1="12" x2="236" y2="244" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1C3142"/>
+      <stop offset="1" stop-color="#101C2B"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="58" y1="54" x2="166" y2="170" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6AF0CC"/>
+      <stop offset="1" stop-color="#27BFC5"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="54" fill="url(#tile)"/>
+  <circle cx="116" cy="114" r="59" fill="none" stroke="url(#mark)" stroke-width="29"/>
+  <path d="M166 108 133 158h24l-12 47 55-65h-27l14-32Z" fill="#F5FBFF" stroke="#142332" stroke-width="9" stroke-linejoin="round" paint-order="stroke"/>
+</svg>

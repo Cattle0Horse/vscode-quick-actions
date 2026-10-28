@@ -1,0 +1,93 @@
+{
+  "name": "vscode-quick-actions",
+  "displayName": "快捷操作",
+  "icon": "resources/icon.png",
+  "description": "通过命令面板和快捷键快速完成常用编辑器操作",
+  "version": "0.0.0",
+  "publisher": "cattle-horse",
+  "license": "MIT",
+  "private": true,
+  "packageManager": "pnpm@12.16.1",
+  "type": "module",
+  "engines": {
+    "node": ">=22.16.0",
+    "vscode": "^1.140.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "extensionKind": [
+    "workspace"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    },
+    "virtualWorkspaces": false
+  },
+  "main": "./dist/extension.cjs",
+  "files": [
+    "dist/extension.cjs",
+    "resources/icon.png",
+    "LICENSE.txt"
+  ],
+  "scripts": {
+    "check": "node --run typecheck && node --run format:check",
+    "typecheck": "tsc --noEmit",
+    "build": "node tools/build.mjs",
+    "watch": "node tools/build.mjs --watch",
+    "format": "oxfmt . && oxlint --fix .",
+    "format:check": "oxfmt --check . && node --run lint",
+    "lint": "oxlint --deny-warnings .",
+    "test": "node --run test:extension",
+    "test:extension": "node tools/build.mjs --tests && node tools/test-desktop.mjs",
+    "test:package": "node tools/build.mjs --tests && node --run package && node tools/test-desktop.mjs --package",
+    "serve:desktop": "node tools/build.mjs --tests && node tools/test-desktop.mjs --interactive",
+    "package": "node tools/package.mjs",
+    "release": "bumpp --no-push --commit \"chore(release): 发布 {tag}\" --tag \"v{version}\"",
+    "vscode:prepublish": "node --run check && node tools/build.mjs --production",
+    "vscode:install": "code --install-extension artifacts/quick-actions.vsix --force",
+    "vscode:build:install": "node --run package && node --run vscode:install"
+  },
+  "devDependencies": {
+    "@stylistic/eslint-plugin": "5.10.0",
+    "@types/node": "^22.20.5",
+    "@types/vscode": "~1.140.0",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "4.0.0",
+    "bumpp": "12.3.0",
+    "esbuild": "0.28.2",
+    "oxfmt": "0.71.0",
+    "oxlint": "1.86.0",
+    "typescript": "~6.0.3",
+    "yauzl": "^3.4.0"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "quickActions.openUnstagedDiff",
+        "title": "打开当前文件 Git 差异（未暂存）",
+        "category": "Quick Actions",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "quickActions.openHeadDiff",
+        "title": "打开当前文件 Git 差异（HEAD）",
+        "category": "Quick Actions",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "quickActions.openStagedDiff",
+        "title": "打开当前文件 Git 差异（已暂存）",
+        "category": "Quick Actions",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "quickActions.openGitDiff",
+        "title": "打开当前文件 Git 差异（自动）",
+        "category": "Quick Actions",
+        "icon": "$(diff)"
+      }
+    ]
+  }
+}

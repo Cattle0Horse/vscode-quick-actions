@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach Isolated VS Code Desktop",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "timeout": 120000,
+      "restart": true,
+      "outFiles": ["${workspaceFolder}/dist/**/*.cjs"],
+      "preLaunchTask": "desktop-host"
+    }
+  ]
+}
