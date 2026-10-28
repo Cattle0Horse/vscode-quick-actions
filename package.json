@@ -28,6 +28,7 @@
   "main": "./dist/extension.cjs",
   "files": [
     "dist/extension.cjs",
+    "dist/node_modules/@crosscopy/clipboard/**",
     "resources/icon.png",
     "LICENSE.txt"
   ],
@@ -66,6 +67,12 @@
   "contributes": {
     "commands": [
       {
+        "command": "quickActions.copyCurrentFile",
+        "title": "复制当前文件到系统剪贴板",
+        "category": "Quick Actions",
+        "icon": "$(copy)"
+      },
+      {
         "command": "quickActions.openUnstagedDiff",
         "title": "打开当前文件 Git 差异（未暂存）",
         "category": "Quick Actions",
@@ -90,5 +97,8 @@
         "icon": "$(diff)"
       }
     ]
+  },
+  "dependencies": {
+    "@crosscopy/clipboard": "0.3.6"
   }
 }

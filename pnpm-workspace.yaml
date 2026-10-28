@@ -1,3 +1,10 @@
 allowBuilds:
   esbuild: true
   "@vscode/vsce-sign": false
+
+supportedArchitectures:
+  - current
+  - win32-x64
+  - darwin-x64
+  - darwin-arm64
+  - linux-x64

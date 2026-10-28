@@ -5,6 +5,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import * as vscode from "vscode"
 import type { GitExtension } from "../../src/git.js"
+import { testCopyCurrentFile } from "./copyCurrentFile.js"
 
 export async function run(): Promise<void> {
   const root = vscode.workspace.workspaceFolders![0]!.uri.fsPath
@@ -140,6 +141,8 @@ export async function run(): Promise<void> {
   await vscode.commands.executeCommand("quickActions.openGitDiff")
   assert.equal(vscode.window.tabGroups.activeTabGroup.tabs.length, 0)
   cases.push("no-editor")
+
+  await testCopyCurrentFile(root, cases)
 
   const report = {
     cases,
