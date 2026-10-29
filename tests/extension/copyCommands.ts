@@ -4,9 +4,13 @@ import { readFile, unlink, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { createInterface } from "node:readline"
 import * as vscode from "vscode"
+import { testCopyCurrentFilePath } from "./copyCurrentFilePath.js"
 
-export async function testCopyCurrentFile(root: string, cases: string[]): Promise<void> {
-  if (process.platform !== "win32" || process.arch !== "x64") return
+export async function testCopyCommands(root: string, cases: string[]): Promise<void> {
+  if (process.platform !== "win32" || process.arch !== "x64") {
+    await testCopyCurrentFilePath(root, cases)
+    return
+  }
   // Materialize clipboard formats before replacing them; restore after the test.
   const script = `
 $ErrorActionPreference = 'Stop'
@@ -57,6 +61,8 @@ try {
   }
   try {
     assert.equal((await lines.next()).value, "ready", stderr)
+    // Run text clipboard cases inside the native clipboard snapshot as well.
+    await testCopyCurrentFilePath(root, cases)
     const uri = vscode.Uri.file(join(root, "文件 ' $() & sample.txt"))
     await writeFile(uri.fsPath, "saved content\n")
     const document = await vscode.workspace.openTextDocument(uri)

@@ -1,5 +1,6 @@
 import * as vscode from "vscode"
 import { copyCurrentFile } from "./commands/copyCurrentFile.js"
+import { copyCurrentFilePath } from "./commands/copyCurrentFilePath.js"
 import { openGitDiff, type DiffMode } from "./commands/openGitDiff.js"
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -11,6 +12,10 @@ export function activate(context: vscode.ExtensionContext): void {
         void vscode.window.showErrorMessage(`复制文件失败：${error instanceof Error ? error.message : String(error)}`)
       }
     })
+  )
+  context.subscriptions.push(
+    vscode.commands.registerCommand("quickActions.copyCurrentFileAbsolutePathWithLine", () => copyCurrentFilePath(false)),
+    vscode.commands.registerCommand("quickActions.copyCurrentFileRelativePathWithLine", () => copyCurrentFilePath(true))
   )
   context.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider("quick-actions-empty", { provideTextDocumentContent: () => "" }))
   const registerDiff = (command: string, mode: DiffMode) => {

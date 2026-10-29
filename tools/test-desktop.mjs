@@ -49,9 +49,12 @@ if (packaged) {
   await copyFile("artifacts/extension-tests/index.cjs", resolve(extensionRoot, "test/index.cjs"))
 }
 const workspace = resolve(runDirectory, "workspace")
+const otherWorkspace = resolve(runDirectory, "other-workspace")
 const userData = resolve(runDirectory, "user-data")
 const extensions = resolve(runDirectory, "extensions")
-await Promise.all([mkdir(workspace), mkdir(resolve(userData, "User"), { recursive: true }), mkdir(extensions)])
+await Promise.all([mkdir(workspace), mkdir(otherWorkspace), mkdir(resolve(userData, "User"), { recursive: true }), mkdir(extensions)])
+const workspaceFile = resolve(runDirectory, "test.code-workspace")
+await writeFile(workspaceFile, JSON.stringify({ folders: [{ path: workspace }, { path: otherWorkspace, name: "Other folder" }] }))
 await writeFile(
   resolve(userData, "User/settings.json"),
   JSON.stringify({
@@ -67,7 +70,17 @@ await writeFile(
   })
 )
 const executable = process.env.VSCODE_EXECUTABLE_PATH || (await downloadAndUnzipVSCode("stable"))
-const launchArgs = [workspace, "--user-data-dir", userData, "--extensions-dir", extensions, "--disable-extensions", "--disable-workspace-trust", "--skip-welcome", "--skip-release-notes"]
+const launchArgs = [
+  workspaceFile,
+  "--user-data-dir",
+  userData,
+  "--extensions-dir",
+  extensions,
+  "--disable-extensions",
+  "--disable-workspace-trust",
+  "--skip-welcome",
+  "--skip-release-notes"
+]
 if (interactive) {
   const child = spawn(executable, [...launchArgs, `--extensionDevelopmentPath=${extensionRoot}`, "--inspect-extensions=9229"], { stdio: "inherit", windowsHide: true })
   child.once("spawn", () => console.log("Isolated desktop host ready"))

@@ -67,6 +67,18 @@
   "contributes": {
     "commands": [
       {
+        "command": "quickActions.copyCurrentFileAbsolutePathWithLine",
+        "title": "复制当前文件绝对路径及行号",
+        "category": "Quick Actions",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "quickActions.copyCurrentFileRelativePathWithLine",
+        "title": "复制当前文件相对路径及行号",
+        "category": "Quick Actions",
+        "icon": "$(copy)"
+      },
+      {
         "command": "quickActions.copyCurrentFile",
         "title": "复制当前文件到系统剪贴板",
         "category": "Quick Actions",
