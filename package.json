@@ -3,7 +3,7 @@
   "displayName": "快捷操作",
   "icon": "resources/icon.png",
   "description": "通过命令面板和快捷键快速完成常用编辑器操作",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "cattle-horse",
   "license": "MIT",
   "private": true,
