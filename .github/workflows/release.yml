@@ -1,6 +1,7 @@
 name: Release VSIX
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*"
@@ -10,18 +11,33 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: pnpm/action-setup@v6
+      - name: Download pinned pnpm binary
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./package.json').packageManager.split('@')[1]")
+          asset=$(gh api "repos/pnpm/pnpm/releases/tags/v$version" --jq '.assets[] | select(.name == "pnpm-linux-x64.tar.gz") | [.browser_download_url, .digest] | @tsv')
+          IFS=$'\t' read -r url digest <<< "$asset"
+          [[ "$digest" == sha256:* ]]
+          archive="$RUNNER_TEMP/pnpm.tar.gz"
+          curl --fail --location --retry 3 "$url" --output "$archive"
+          printf '%s  %s\n' "${digest#sha256:}" "$archive" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/pnpm-bin"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/pnpm-bin"
+          echo "$RUNNER_TEMP/pnpm-bin" >> "$GITHUB_PATH"
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
       - name: Check tag version
+        if: github.event_name == 'push'
         run: >-
           node -e "const { version } = require('./package.json'); if (process.env.GITHUB_REF_NAME !== 'v' + version) throw new Error('Tag must match package.json version: v' + version)"
       - run: pnpm install --frozen-lockfile
@@ -31,7 +47,9 @@ jobs:
           name: quick-actions-${{ github.ref_name }}
           path: artifacts/quick-actions.vsix
           if-no-files-found: error
+          compression-level: 0
       - name: Generate changelog and publish GitHub Release
+        if: github.event_name == 'push'
         shell: bash
         run: pnpm exec changelogithub --to "$GITHUB_REF_NAME" --assets artifacts/quick-actions.vsix
         env:

@@ -62,6 +62,29 @@ export async function run(): Promise<void> {
   await vscode.commands.executeCommand("quickActions.openGitDiff")
   assert.ok(vscode.window.tabGroups.activeTabGroup.activeTab?.input instanceof vscode.TabInputTextDiff)
   cases.push("repeat-from-staged-diff")
+
+  const gitGraphProvider = vscode.workspace.registerTextDocumentContentProvider("git-graph", {
+    provideTextDocumentContent: (uri) => {
+      if (!uri.query) return ""
+      const data = JSON.parse(Buffer.from(uri.query, "base64").toString("utf8")) as { content?: string }
+      return data.content ?? ""
+    }
+  })
+  const gitGraphUri = (filePath: string, content: string) =>
+    vscode.Uri.file("file").with({
+      scheme: "git-graph",
+      query: Buffer.from(JSON.stringify({ repo: first, filePath, commit: "fixture", exists: true, content })).toString("base64")
+    })
+  await vscode.commands.executeCommand("workbench.action.closeAllEditors")
+  await vscode.commands.executeCommand("vscode.diff", gitGraphUri("sample.txt", "historical\n"), gitGraphUri("sample.txt", "historical changed\n"), "Git Graph fixture", { preview: false })
+  await vscode.commands.executeCommand("quickActions.openGitDiff")
+  const gitGraphTab = vscode.window.tabGroups.activeTabGroup.activeTab?.input
+  assert.ok(gitGraphTab instanceof vscode.TabInputTextDiff)
+  assert.equal((await vscode.workspace.openTextDocument(gitGraphTab.original)).getText(), "base\n")
+  assert.equal((await vscode.workspace.openTextDocument(gitGraphTab.modified)).getText(), "working\n")
+  cases.push("git-graph-historical-diff-uses-working-file")
+  gitGraphProvider.dispose()
+
   await writeFile(file.fsPath, "working again\n")
   await checkDiff(file, "working\n", "working again\n", "unstaged-before-staged")
   await checkDiff(file, "working\n", "working again\n", "explicit-unstaged", "quickActions.openUnstagedDiff")
