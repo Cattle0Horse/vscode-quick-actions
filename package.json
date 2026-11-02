@@ -67,6 +67,12 @@
   "contributes": {
     "commands": [
       {
+        "command": "quickActions.openDiffSourceFile",
+        "title": "从 Git 差异打开源文件",
+        "category": "Quick Actions",
+        "icon": "$(go-to-file)"
+      },
+      {
         "command": "quickActions.copyCurrentFileAbsolutePathWithLine",
         "title": "复制当前文件绝对路径及行号",
         "category": "Quick Actions",

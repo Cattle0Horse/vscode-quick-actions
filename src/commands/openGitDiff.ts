@@ -1,25 +1,10 @@
-import { basename, join } from "node:path"
+import { basename } from "node:path"
 import * as vscode from "vscode"
 import type { Change, GitExtension } from "../git.js"
 import { Status } from "../git.js"
+import { decodeGitGraphUri } from "../gitGraph.js"
 
 export type DiffMode = "unstaged" | "head" | "staged" | "auto"
-
-type GitGraphUriData = {
-  readonly repo: string
-  readonly filePath: string
-}
-
-function decodeGitGraphUri(uri: vscode.Uri): vscode.Uri | undefined {
-  if (uri.scheme !== "git-graph" || !uri.query) return undefined
-  try {
-    const data = JSON.parse(Buffer.from(uri.query, "base64").toString("utf8")) as Partial<GitGraphUriData>
-    if (typeof data.repo !== "string" || typeof data.filePath !== "string" || data.filePath.length === 0) return undefined
-    return vscode.Uri.file(join(data.repo, data.filePath))
-  } catch {
-    return undefined
-  }
-}
 
 export async function openGitDiff(mode: DiffMode): Promise<void> {
   // A diff's modified side is the current file even when its original side has focus.

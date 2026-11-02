@@ -2,8 +2,10 @@ import * as vscode from "vscode"
 import { copyCurrentFile } from "./commands/copyCurrentFile.js"
 import { copyCurrentFilePath } from "./commands/copyCurrentFilePath.js"
 import { openGitDiff, type DiffMode } from "./commands/openGitDiff.js"
+import { openDiffSourceFile } from "./commands/openDiffSourceFile.js"
 
 export function activate(context: vscode.ExtensionContext): void {
+  context.subscriptions.push(vscode.commands.registerCommand("quickActions.openDiffSourceFile", openDiffSourceFile))
   context.subscriptions.push(
     vscode.commands.registerCommand("quickActions.copyCurrentFile", async () => {
       try {

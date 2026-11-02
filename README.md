@@ -43,6 +43,24 @@
 
 使用原生文本差异编辑器。可按个人偏好设置左右或上下布局。首版面向桌面本地文本文件；不提供二进制专用比较、Notebook 结构差异或合并冲突处理。
 
+## 从 Git 差异打开源文件
+
+运行 **Quick Actions: 从 Git 差异打开源文件**（`quickActions.openDiffSourceFile`），统一支持 VS Code 内置 Git 与 Git Graph 的文本差异编辑器。
+
+- 打开差异右侧对应的当前工作区文件；已暂存差异也打开当前文件，保留未保存编辑。
+- Git Graph 历史差异按其记录的仓库与文件路径定位，不会打开展示用的 `file.json`。
+- 不保存文件或修改暂存区；Git Graph 文件已删除或路径无法解析时提示原因。
+
+可为该命令绑定同一个快捷键，例如：
+
+```json
+{
+  "key": "ctrl+alt+o",
+  "command": "quickActions.openDiffSourceFile",
+  "when": "isInDiffEditor"
+}
+```
+
 ## 自定义快捷键
 
 在键盘快捷方式中搜索上述命令 ID，可为各命令分别绑定自己的按键。扩展不占用默认快捷键。例如为自动模式在 `keybindings.json` 中添加：
