@@ -3,7 +3,7 @@
   "displayName": "快捷操作",
   "icon": "resources/icon.png",
   "description": "通过命令面板和快捷键快速完成常用编辑器操作",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "publisher": "cattle-horse",
   "license": "MIT",
   "private": true,
@@ -66,6 +66,18 @@
   },
   "contributes": {
     "commands": [
+      {
+        "command": "quickActions.copyFilePath",
+        "title": "复制文件路径",
+        "category": "Quick Actions",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "quickActions.copyRelativeFilePath",
+        "title": "复制文件相对路径",
+        "category": "Quick Actions",
+        "icon": "$(copy)"
+      },
       {
         "command": "quickActions.openDiffSourceFile",
         "title": "从 Git 差异打开源文件",
