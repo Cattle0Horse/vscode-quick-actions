@@ -3,13 +3,17 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import * as vscode from "vscode"
+import { testCopyGitFilePath } from "./copyGitFilePath.js"
 
 export async function testCopyCurrentFilePath(root: string, cases: string[]): Promise<void> {
   const absolute = "quickActions.copyCurrentFileAbsolutePathWithLine"
   const relative = "quickActions.copyCurrentFileRelativePathWithLine"
+  const pathAbsolute = "quickActions.copyFilePath"
+  const pathRelative = "quickActions.copyRelativeFilePath"
   const previous = await vscode.env.clipboard.readText()
   const outside = await mkdtemp(join(tmpdir(), "quick-actions-path-"))
   try {
+    await testCopyGitFilePath(root, cases)
     await mkdir(join(root, "path fixture"))
     const uri = vscode.Uri.file(join(root, "path fixture", "文件 # sample.txt"))
     const content = "first\nsecond\nthird\nfourth\n"
@@ -23,6 +27,11 @@ export async function testCopyCurrentFilePath(root: string, cases: string[]): Pr
     assert.equal(await vscode.env.clipboard.readText(), `${uri.fsPath}:3`)
     await vscode.commands.executeCommand(relative)
     assert.equal(await vscode.env.clipboard.readText(), "path fixture/文件 # sample.txt:3")
+    await vscode.commands.executeCommand(pathAbsolute)
+    assert.equal(await vscode.env.clipboard.readText(), uri.fsPath)
+    await vscode.commands.executeCommand(pathRelative)
+    assert.equal(await vscode.env.clipboard.readText(), "path fixture/文件 # sample.txt")
+    cases.push("copy-file-path-local-absolute-relative-without-line")
     cases.push("copy-path-absolute-relative-unicode-and-current-line")
 
     // A reversed selection uses its active end, not the normalized range start/end.
@@ -38,6 +47,10 @@ export async function testCopyCurrentFilePath(root: string, cases: string[]): Pr
     assert.equal(await readFile(uri.fsPath, "utf8"), content)
     assert.ok(document.isDirty)
     assert.equal(document.getText(), `unsaved\n${content}`)
+    await vscode.commands.executeCommand(pathRelative)
+    assert.equal(await vscode.env.clipboard.readText(), "path fixture/文件 # sample.txt")
+    assert.equal(await readFile(uri.fsPath, "utf8"), content)
+    assert.ok(document.isDirty)
     await vscode.commands.executeCommand("workbench.action.files.revert")
     cases.push("copy-path-unsaved-buffer-without-saving")
 
@@ -46,6 +59,8 @@ export async function testCopyCurrentFilePath(root: string, cases: string[]): Pr
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(outsideUri))
     await vscode.commands.executeCommand(relative)
     assert.equal(await vscode.env.clipboard.readText(), `${outsideUri.fsPath}:1`)
+    await vscode.commands.executeCommand(pathRelative)
+    assert.equal(await vscode.env.clipboard.readText(), outsideUri.fsPath)
     cases.push("copy-path-outside-workspace-falls-back-to-absolute")
 
     await vscode.commands.executeCommand("vscode.diff", uri, outsideUri, "Path fixture", { preview: false })
@@ -58,7 +73,8 @@ export async function testCopyCurrentFilePath(root: string, cases: string[]): Pr
     // Focus changes reach the extension host after the workbench command resolves.
     const focusDeadline = Date.now() + 5000
     while (vscode.window.activeTextEditor?.document.uri.toString() !== uri.toString() && Date.now() < focusDeadline) {
-      await new Promise((resolve) => setTimeout(resolve, 20))
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      await vscode.commands.executeCommand("workbench.action.compareEditor.focusSecondarySide")
     }
     const leftEditor = vscode.window.activeTextEditor!
     assert.equal(leftEditor.document.uri.toString(), uri.toString())
@@ -73,18 +89,69 @@ export async function testCopyCurrentFilePath(root: string, cases: string[]): Pr
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(otherUri))
     await vscode.commands.executeCommand(relative)
     assert.equal(await vscode.env.clipboard.readText(), "other.txt:1")
+    await vscode.commands.executeCommand(pathRelative)
+    assert.equal(await vscode.env.clipboard.readText(), "other.txt")
     const workspaceEditor = await vscode.window.showTextDocument(document)
     workspaceEditor.selection = new vscode.Selection(0, 0, 0, 0)
     await vscode.commands.executeCommand(relative)
     assert.equal(await vscode.env.clipboard.readText(), "path fixture/文件 # sample.txt:1")
     cases.push("copy-path-multiple-workspace-roots-without-folder-prefix")
 
+    const graphProvider = vscode.workspace.registerTextDocumentContentProvider("git-graph", { provideTextDocumentContent: () => "historical\n" })
+    const graph = (repo: string, filePath: string) =>
+      vscode.Uri.file("file.json").with({
+        scheme: "git-graph",
+        query: Buffer.from(JSON.stringify({ repo, filePath, commit: "fixture", exists: true })).toString("base64")
+      })
+    const old = graph(root, "removed/旧 文件 #.txt")
+    const current = graph(vscode.workspace.workspaceFolders![1]!.uri.fsPath, "nested/新文件.txt")
+    try {
+      await vscode.commands.executeCommand("vscode.diff", old, current, "Graph path fixture", { preview: false })
+      for (const [side, target, expected, expectedAbsolute] of [
+        ["Primary", current, "nested/新文件.txt", join(vscode.workspace.workspaceFolders![1]!.uri.fsPath, "nested", "新文件.txt")],
+        ["Secondary", old, "removed/旧 文件 #.txt", join(root, "removed", "旧 文件 #.txt")]
+      ] as const) {
+        await vscode.commands.executeCommand(`workbench.action.compareEditor.focus${side}Side`)
+        const deadline = Date.now() + 5000
+        while (vscode.window.activeTextEditor?.document.uri.toString() !== target.toString() && Date.now() < deadline) {
+          await new Promise((resolve) => setTimeout(resolve, 100))
+          await vscode.commands.executeCommand(`workbench.action.compareEditor.focus${side}Side`)
+        }
+        assert.equal(vscode.window.activeTextEditor?.document.uri.toString(), target.toString())
+        await vscode.commands.executeCommand(pathAbsolute)
+        assert.equal(await vscode.env.clipboard.readText(), vscode.Uri.file(expectedAbsolute).fsPath)
+        await vscode.commands.executeCommand(pathRelative)
+        assert.equal(await vscode.env.clipboard.readText(), expected)
+        await vscode.commands.executeCommand(absolute)
+        assert.equal(await vscode.env.clipboard.readText(), `${vscode.Uri.file(expectedAbsolute).fsPath}:1`)
+        await vscode.commands.executeCommand(relative)
+        assert.equal(await vscode.env.clipboard.readText(), `${expected}:1`)
+      }
+      cases.push("copy-file-path-git-graph-focused-side-multiple-roots-and-deleted-path")
+      await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(graph(outside, "deleted.txt")))
+      await vscode.commands.executeCommand(pathRelative)
+      assert.equal(await vscode.env.clipboard.readText(), vscode.Uri.file(join(outside, "deleted.txt")).fsPath)
+      cases.push("copy-file-path-git-graph-outside-workspace")
+      for (const query of ["invalid", Buffer.from(JSON.stringify({ repo: root })).toString("base64")]) {
+        await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(current.with({ query })))
+        await vscode.env.clipboard.writeText("invalid graph preserved")
+        for (const command of [pathAbsolute, pathRelative, absolute, relative]) {
+          await vscode.commands.executeCommand(command)
+          assert.equal(await vscode.env.clipboard.readText(), "invalid graph preserved")
+        }
+      }
+      cases.push("copy-file-path-invalid-git-graph-preserves-clipboard")
+    } finally {
+      await vscode.commands.executeCommand("workbench.action.closeAllEditors")
+      graphProvider.dispose()
+    }
+
     const sentinel = "clipboard preserved"
     await vscode.env.clipboard.writeText(sentinel)
     const provider = vscode.workspace.registerTextDocumentContentProvider("quick-actions-path-test", { provideTextDocumentContent: () => "virtual\n" })
     try {
       await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(vscode.Uri.parse("quick-actions-path-test:/virtual.txt")))
-      for (const command of [absolute, relative]) {
+      for (const command of [absolute, relative, pathAbsolute, pathRelative]) {
         await vscode.commands.executeCommand(command)
         assert.equal(await vscode.env.clipboard.readText(), sentinel)
       }
@@ -93,12 +160,12 @@ export async function testCopyCurrentFilePath(root: string, cases: string[]): Pr
       provider.dispose()
     }
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument())
-    for (const command of [absolute, relative]) {
+    for (const command of [absolute, relative, pathAbsolute, pathRelative]) {
       await vscode.commands.executeCommand(command)
       assert.equal(await vscode.env.clipboard.readText(), sentinel)
     }
     await vscode.commands.executeCommand("workbench.action.closeAllEditors")
-    for (const command of [absolute, relative]) {
+    for (const command of [absolute, relative, pathAbsolute, pathRelative]) {
       await vscode.commands.executeCommand(command)
       assert.equal(await vscode.env.clipboard.readText(), sentinel)
     }

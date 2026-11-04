@@ -1,6 +1,6 @@
 import * as vscode from "vscode"
 import { copyCurrentFile } from "./commands/copyCurrentFile.js"
-import { copyCurrentFilePath } from "./commands/copyCurrentFilePath.js"
+import { copyFilePath } from "./commands/copyFilePath.js"
 import { openGitDiff, type DiffMode } from "./commands/openGitDiff.js"
 import { openDiffSourceFile } from "./commands/openDiffSourceFile.js"
 
@@ -16,8 +16,10 @@ export function activate(context: vscode.ExtensionContext): void {
     })
   )
   context.subscriptions.push(
-    vscode.commands.registerCommand("quickActions.copyCurrentFileAbsolutePathWithLine", () => copyCurrentFilePath(false)),
-    vscode.commands.registerCommand("quickActions.copyCurrentFileRelativePathWithLine", () => copyCurrentFilePath(true))
+    vscode.commands.registerCommand("quickActions.copyFilePath", () => copyFilePath(false)),
+    vscode.commands.registerCommand("quickActions.copyRelativeFilePath", () => copyFilePath(true)),
+    vscode.commands.registerCommand("quickActions.copyCurrentFileAbsolutePathWithLine", () => copyFilePath(false, true)),
+    vscode.commands.registerCommand("quickActions.copyCurrentFileRelativePathWithLine", () => copyFilePath(true, true))
   )
   context.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider("quick-actions-empty", { provideTextDocumentContent: () => "" }))
   const registerDiff = (command: string, mode: DiffMode) => {
