@@ -66,7 +66,8 @@ export async function testOpenDiffSourceFile(root: string, api: GitAPI, cases: s
     await vscode.commands.executeCommand("workbench.action.compareEditor.focusSecondarySide")
     const focusDeadline = Date.now() + 5000
     while (vscode.window.activeTextEditor?.document.uri.toString() !== graph("old.json").toString() && Date.now() < focusDeadline) {
-      await new Promise((resolve) => setTimeout(resolve, 20))
+      await new Promise((resolve) => setTimeout(resolve, 100))
+      await vscode.commands.executeCommand("workbench.action.compareEditor.focusSecondarySide")
     }
     assert.equal(vscode.window.activeTextEditor?.document.uri.toString(), graph("old.json").toString())
     await vscode.commands.executeCommand(command)
