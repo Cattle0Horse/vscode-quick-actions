@@ -1,5 +1,5 @@
 import * as vscode from "vscode"
-import { decodeGitGraphUri } from "../gitGraph.js"
+import { resolveFilePath } from "../filePath.js"
 
 export async function openDiffSourceFile(): Promise<void> {
   try {
@@ -8,12 +8,10 @@ export async function openDiffSourceFile(): Promise<void> {
       void vscode.window.showInformationMessage("请先打开一个 Git 文本差异编辑器。")
       return
     }
-    const uri = input.modified
-    if (uri.scheme === "git" || uri.scheme === "file") {
-      await vscode.commands.executeCommand("git.openFile", uri)
-      return
-    }
-    const source = uri.scheme === "quick-actions-empty" ? uri.with({ scheme: "file", query: "", fragment: "" }) : decodeGitGraphUri(uri)
+    const editor = vscode.window.activeTextEditor
+    const focused = editor?.document.uri.toString()
+    const position = focused === input.original.toString() || focused === input.modified.toString() ? editor?.selection.active : undefined
+    const source = resolveFilePath(input.modified)
     if (!source) {
       void vscode.window.showInformationMessage("无法从当前差异解析源文件路径。")
       return
@@ -25,7 +23,11 @@ export async function openDiffSourceFile(): Promise<void> {
       void vscode.window.showInformationMessage("源文件在当前工作区中不存在。")
       return
     }
-    await vscode.window.showTextDocument(source, { preview: false })
+    const document = await vscode.workspace.openTextDocument(source)
+    const target = position && document.validatePosition(position)
+    const selection = target && new vscode.Range(target, target)
+    const opened = await vscode.window.showTextDocument(document, { preview: false, selection })
+    if (selection) opened.revealRange(selection, vscode.TextEditorRevealType.InCenterIfOutsideViewport)
   } catch (error) {
     void vscode.window.showErrorMessage(`打开源文件失败：${error instanceof Error ? error.message : String(error)}`)
   }
