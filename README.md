@@ -62,6 +62,8 @@
 运行 **Quick Actions: 从 Git 差异打开源文件**（`quickActions.openDiffSourceFile`），统一支持 VS Code 内置 Git 与 Git Graph 的文本差异编辑器。
 
 - 打开差异右侧对应的当前工作区文件；已暂存差异也打开当前文件，保留未保存编辑。
+- 支持内置 Git 将新增暂存文件打开的单页只读文本视图，跳转到对应的工作区源文件。
+- 支持内置 Git 三栏冲突合并编辑器，从当前、传入或结果栏打开对应的工作区源文件；临时合并结果保留在合并编辑器中，不自动写入源文件。
 - 跳转到当前聚焦侧的光标行、列；使用相同行号，不按版本内容重新映射。位置超出当前文件范围时收敛到有效位置。
 - Git Graph 历史差异按其记录的仓库与文件路径定位，不会打开展示用的 `file.json`。
 - 不保存文件或修改暂存区；Git Graph 文件已删除或路径无法解析时提示原因。
@@ -72,7 +74,7 @@
 {
   "key": "ctrl+alt+o",
   "command": "quickActions.openDiffSourceFile",
-  "when": "isInDiffEditor"
+  "when": "isInDiffEditor || isMergeEditor || resourceScheme == git"
 }
 ```
 

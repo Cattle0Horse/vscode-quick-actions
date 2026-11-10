@@ -4,6 +4,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import * as vscode from "vscode"
 import type { GitAPI } from "../../src/git.js"
+import { testOpenMergeSourceFile } from "./openMergeSourceFile.js"
 
 export async function testOpenDiffSourceFile(root: string, api: GitAPI, cases: string[]): Promise<void> {
   const repo = join(root, "open-source")
@@ -20,7 +21,8 @@ export async function testOpenDiffSourceFile(root: string, api: GitAPI, cases: s
   await writeFile(lines.fsPath, lineContent)
   git("add", ".")
   git("commit", "-m", "fixture")
-  assert.ok(await api.openRepository(vscode.Uri.file(repo)))
+  const repository = await api.openRepository(vscode.Uri.file(repo))
+  assert.ok(repository)
   await writeFile(source.fsPath, "staged\n")
   git("add", ".")
   await writeFile(source.fsPath, "working\n")
@@ -157,4 +159,44 @@ export async function testOpenDiffSourceFile(root: string, api: GitAPI, cases: s
   await vscode.commands.executeCommand(command)
   assert.equal(vscode.window.tabGroups.activeTabGroup.tabs.length, 0)
   cases.push("open-source-without-diff-keeps-editors")
+
+  const added = vscode.Uri.file(join(repo, "nested", "新增 staged.txt"))
+  await writeFile(added.fsPath, "staged addition\nsecond line\n")
+  git("add", "--", added.fsPath)
+  await repository.status()
+  await vscode.commands.executeCommand("git.openChange", added)
+  const addedTab = vscode.window.tabGroups.activeTabGroup.activeTab?.input
+  assert.ok(addedTab instanceof vscode.TabInputText)
+  assert.equal(addedTab.uri.scheme, "git")
+  const addedSnapshot = vscode.window.activeTextEditor!
+  assert.equal(addedSnapshot.document.getText(), "staged addition\nsecond line\n")
+  addedSnapshot.selection = new vscode.Selection(1, 0, 1, 4)
+  await vscode.commands.executeCommand(command)
+  assertSource(added, "staged addition\nsecond line\n")
+  assert.equal(vscode.window.activeTextEditor!.selection.active.line, 1)
+  assert.equal(vscode.window.activeTextEditor!.selection.active.character, 4)
+  cases.push("open-source-from-native-staged-addition-text-view-with-cursor")
+
+  await writeFile(added.fsPath, "working addition\nsecond line\n")
+  const addedEditor = await vscode.window.showTextDocument(added, { preview: false })
+  await addedEditor.edit((edit) => edit.insert(new vscode.Position(0, 0), "unsaved\n"))
+  const addedContent = addedEditor.document.getText()
+  await vscode.window.showTextDocument(addedSnapshot.document, { preview: false })
+  await vscode.commands.executeCommand(command)
+  assertSource(added, addedContent)
+  assert.ok(addedEditor.document.isDirty)
+  assert.equal(await readFile(added.fsPath, "utf8"), "working addition\nsecond line\n")
+  assert.equal(git("show", ":nested/新增 staged.txt"), "staged addition\nsecond line\n")
+  cases.push("open-source-staged-addition-preserves-working-buffer-disk-and-index")
+  await vscode.commands.executeCommand("workbench.action.files.revert")
+
+  const ordinaryEditor = vscode.window.activeTextEditor!
+  ordinaryEditor.selection = new vscode.Selection(0, 0, 0, 4)
+  const ordinaryTab = vscode.window.tabGroups.activeTabGroup.activeTab
+  await vscode.commands.executeCommand(command)
+  assert.equal(vscode.window.tabGroups.activeTabGroup.activeTab, ordinaryTab)
+  assert.ok(ordinaryEditor.selection.isEqual(new vscode.Selection(0, 0, 0, 4)))
+  cases.push("open-source-from-ordinary-text-keeps-tab-and-selection")
+  await vscode.commands.executeCommand("workbench.action.closeAllEditors")
+  await testOpenMergeSourceFile(root, api, cases)
 }
