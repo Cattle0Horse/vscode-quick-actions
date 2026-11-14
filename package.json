@@ -67,6 +67,16 @@
   "contributes": {
     "commands": [
       {
+        "command": "quickActions.toggleGitHunkStaging",
+        "title": "切换当前 Git 块暂存状态",
+        "category": "Quick Actions"
+      },
+      {
+        "command": "quickActions.toggleGitFileStaging",
+        "title": "切换当前文件 Git 暂存状态",
+        "category": "Quick Actions"
+      },
+      {
         "command": "quickActions.copyFilePath",
         "title": "复制文件路径",
         "category": "Quick Actions",

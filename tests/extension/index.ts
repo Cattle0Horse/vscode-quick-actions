@@ -7,6 +7,7 @@ import * as vscode from "vscode"
 import type { GitExtension } from "../../src/git.js"
 import { testCopyCommands } from "./copyCommands.js"
 import { testOpenDiffSourceFile } from "./openDiffSourceFile.js"
+import { testToggleGitStaging } from "./toggleGitStaging.js"
 
 export async function run(): Promise<void> {
   const root = vscode.workspace.workspaceFolders![0]!.uri.fsPath
@@ -167,6 +168,7 @@ export async function run(): Promise<void> {
   cases.push("no-editor")
 
   await testOpenDiffSourceFile(root, api, cases)
+  await testToggleGitStaging(root, api, cases)
   await testCopyCommands(root, cases)
 
   const report = {

@@ -6,6 +6,7 @@ import type { Uri } from "vscode"
 export const enum Status {
   INDEX_ADDED = 1,
   INDEX_DELETED = 2,
+  INDEX_RENAMED = 3,
   DELETED = 6,
   UNTRACKED = 7,
   INTENT_TO_ADD = 9
@@ -26,9 +27,13 @@ export interface Repository {
     readonly mergeChanges: Change[]
   }
   status(): Promise<void>
+  add(paths: string[]): Promise<void>
+  revert(paths: string[]): Promise<void>
+  buffer(ref: string, path: string): Promise<Buffer>
 }
 
 export interface GitAPI {
+  readonly git: { readonly path: string }
   readonly repositories: Repository[]
   getRepository(uri: Uri): Repository | null
   openRepository(uri: Uri): Promise<Repository | null>

@@ -3,8 +3,14 @@ import { copyCurrentFile } from "./commands/copyCurrentFile.js"
 import { copyFilePath } from "./commands/copyFilePath.js"
 import { openGitDiff, type DiffMode } from "./commands/openGitDiff.js"
 import { openDiffSourceFile } from "./commands/openDiffSourceFile.js"
+import { toggleGitFileStaging } from "./commands/toggleGitFileStaging.js"
+import { toggleGitHunkStaging } from "./commands/toggleGitHunkStaging.js"
 
 export function activate(context: vscode.ExtensionContext): void {
+  context.subscriptions.push(
+    vscode.commands.registerCommand("quickActions.toggleGitFileStaging", toggleGitFileStaging),
+    vscode.commands.registerCommand("quickActions.toggleGitHunkStaging", toggleGitHunkStaging)
+  )
   context.subscriptions.push(vscode.commands.registerCommand("quickActions.openDiffSourceFile", openDiffSourceFile))
   context.subscriptions.push(
     vscode.commands.registerCommand("quickActions.copyCurrentFile", async () => {
